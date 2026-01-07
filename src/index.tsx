@@ -1,12 +1,213 @@
 import { Hono } from 'hono'
-import { renderer } from './renderer'
+import { cors } from 'hono/cors'
+import { serveStatic } from 'hono/cloudflare-workers'
 
 const app = new Hono()
 
-app.use(renderer)
+// Enable CORS for API routes
+app.use('/api/*', cors())
 
+// Serve static files
+app.use('/static/*', serveStatic({ root: './public' }))
+
+// Main page
 app.get('/', (c) => {
-  return c.render(<h1>Hello!</h1>)
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>ルーレットホイール - Roulette Wheel</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <style>
+          body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+          }
+          
+          .roulette-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            margin: 0 auto;
+          }
+          
+          .roulette-wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            border: 8px solid #fff;
+          }
+          
+          .roulette-pointer {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #ff4757;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            z-index: 10;
+          }
+          
+          .roulette-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #667eea;
+          }
+          
+          .option-item {
+            transition: all 0.3s ease;
+          }
+          
+          .option-item:hover {
+            transform: translateX(5px);
+          }
+          
+          .result-modal {
+            animation: slideDown 0.5s ease-out;
+          }
+          
+          @keyframes slideDown {
+            from {
+              transform: translateY(-100px);
+              opacity: 0;
+            }
+            to {
+              transform: translateY(0);
+              opacity: 1;
+            }
+          }
+          
+          .pulse {
+            animation: pulse 2s infinite;
+          }
+          
+          @keyframes pulse {
+            0%, 100% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.05);
+            }
+          }
+        </style>
+    </head>
+    <body>
+        <div class="min-h-screen p-8">
+            <!-- Header -->
+            <div class="max-w-7xl mx-auto mb-8">
+                <div class="text-center mb-4">
+                    <h1 class="text-5xl font-bold text-white mb-2">
+                        <i class="fas fa-dharmachakra mr-3"></i>
+                        ルーレットホイール
+                    </h1>
+                    <p class="text-white text-opacity-90">選択肢を追加してルーレットを回そう！</p>
+                </div>
+                
+                <!-- Sound Toggle -->
+                <div class="flex justify-center mb-4">
+                    <button id="soundToggle" class="bg-white bg-opacity-20 text-white px-6 py-2 rounded-lg hover:bg-opacity-30 transition">
+                        <i class="fas fa-volume-up mr-2"></i>
+                        <span id="soundStatus">サウンド: ON</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Panel: Roulette -->
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
+                    <div class="roulette-container">
+                        <div class="roulette-pointer"></div>
+                        <canvas id="rouletteCanvas" class="roulette-wheel"></canvas>
+                        <div class="roulette-center">
+                            <i class="fas fa-star text-2xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 text-center">
+                        <button id="spinBtn" class="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-12 py-4 rounded-full text-xl font-bold hover:shadow-2xl transform hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-play-circle mr-2"></i>
+                            ルーレットを回す
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Options Management -->
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
+                    <h2 class="text-3xl font-bold text-white mb-6">
+                        <i class="fas fa-list-ul mr-2"></i>
+                        選択肢の管理
+                    </h2>
+                    
+                    <!-- Add Option Form -->
+                    <div class="mb-6">
+                        <div class="flex gap-2">
+                            <input 
+                                type="text" 
+                                id="newOption" 
+                                placeholder="新しい選択肢を入力..."
+                                class="flex-1 px-4 py-3 rounded-lg border-2 border-white border-opacity-30 bg-white bg-opacity-20 text-white placeholder-white placeholder-opacity-60 focus:outline-none focus:border-opacity-60"
+                            />
+                            <button 
+                                id="addBtn" 
+                                class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition font-semibold"
+                            >
+                                <i class="fas fa-plus mr-2"></i>
+                                追加
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Options List -->
+                    <div class="space-y-3 max-h-96 overflow-y-auto" id="optionsList">
+                        <!-- Options will be dynamically added here -->
+                    </div>
+                    
+                    <div id="emptyState" class="text-center text-white text-opacity-70 py-12">
+                        <i class="fas fa-inbox text-6xl mb-4 opacity-50"></i>
+                        <p>選択肢がありません。上のフォームから追加してください。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Modal -->
+            <div id="resultModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+                <div class="result-modal bg-white rounded-3xl p-12 max-w-lg w-full text-center shadow-2xl">
+                    <div class="text-6xl mb-6">🎉</div>
+                    <h3 class="text-3xl font-bold mb-4 text-gray-800">当選結果</h3>
+                    <div id="resultText" class="text-5xl font-bold text-purple-600 mb-8 pulse"></div>
+                    <button id="closeModal" class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-full text-lg font-semibold hover:shadow-xl transition">
+                        閉じる
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script src="/static/app.js"></script>
+    </body>
+    </html>
+  `)
 })
 
 export default app
