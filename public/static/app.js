@@ -224,19 +224,19 @@ function renderOptions() {
   emptyState.classList.add('hidden');
   
   list.innerHTML = options.map(opt => `
-    <div class="option-item bg-white bg-opacity-20 rounded-lg p-4 ${!opt.enabled ? 'opacity-50' : ''}">
+    <div class="option-item bg-gray-100 rounded-lg p-4 ${!opt.enabled ? 'opacity-50' : ''}">
       <div class="flex items-center gap-3">
         <!-- Toggle Enable/Disable -->
         <button 
           onclick="toggleOption(${opt.id})"
-          class="w-10 h-10 rounded-lg ${opt.enabled ? 'bg-green-500' : 'bg-gray-500'} text-white hover:opacity-80 transition flex items-center justify-center"
+          class="w-10 h-10 rounded-lg ${opt.enabled ? 'bg-green-500' : 'bg-gray-400'} text-white hover:opacity-80 transition flex items-center justify-center"
           title="${opt.enabled ? '有効' : '無効'}"
         >
           <i class="fas ${opt.enabled ? 'fa-check' : 'fa-times'}"></i>
         </button>
         
         <!-- Option Text -->
-        <div class="flex-1 text-white font-semibold">
+        <div class="flex-1 text-gray-800 font-semibold">
           ${opt.text}
         </div>
         
@@ -319,7 +319,7 @@ function drawWheel() {
     '#FF8C94', '#6C5CE7', '#A29BFE', '#FD79A8', '#FDCB6E'
   ];
   
-  let currentAngle = -Math.PI / 2; // Start from top
+  let currentAngle = -Math.PI / 2; // Start from top (12 o'clock position)
   
   enabledOptions.forEach((opt, index) => {
     const sliceAngle = (opt.weight / totalWeight) * 2 * Math.PI;
@@ -394,37 +394,61 @@ function spinWheel() {
   const totalWeight = enabledOptions.reduce((sum, opt) => sum + opt.weight, 0);
   let random = Math.random() * totalWeight;
   let selectedOption = null;
+  let cumulativeWeight = 0;
   
+  // Find which option was selected
   for (const opt of enabledOptions) {
-    random -= opt.weight;
-    if (random <= 0) {
+    cumulativeWeight += opt.weight;
+    if (random <= cumulativeWeight) {
       selectedOption = opt;
       break;
     }
   }
   
   if (!selectedOption) {
-    selectedOption = enabledOptions[0];
+    selectedOption = enabledOptions[enabledOptions.length - 1];
   }
   
-  // Calculate target angle
-  const selectedIndex = enabledOptions.findIndex(opt => opt.id === selectedOption.id);
-  const sliceAngle = 360 / enabledOptions.length;
-  const targetAngle = (selectedIndex * sliceAngle) + (sliceAngle / 2);
+  // Calculate the angle for the selected option
+  // We need to calculate where the selected option's center is
+  let targetAngle = 0;
+  let angleAccumulator = 0;
   
-  // Add multiple rotations for effect (more spins for longer animation)
-  const spins = 7 + Math.random() * 3; // Increased from 5
-  const totalRotation = (360 * spins) + targetAngle;
+  for (const opt of enabledOptions) {
+    const sliceAngle = (opt.weight / totalWeight) * 360;
+    
+    if (opt.id === selectedOption.id) {
+      // Target the middle of this slice
+      // The pointer is at the top (0 degrees), so we need to rotate 
+      // so that the middle of this slice ends up at the top
+      targetAngle = angleAccumulator + (sliceAngle / 2);
+      break;
+    }
+    
+    angleAccumulator += sliceAngle;
+  }
+  
+  // We need to rotate the wheel so the selected slice is at the top (pointer position)
+  // Since the wheel rotates clockwise and we want the slice to end up at the top,
+  // we need to calculate the rotation needed
+  // The wheel needs to rotate so that targetAngle ends up at 0 (top)
+  const baseRotation = 360 - targetAngle;
+  
+  // Add multiple full rotations for effect
+  const spins = 7 + Math.random() * 3;
+  const totalRotation = (360 * spins) + baseRotation;
   
   // Animate
   const canvas = document.getElementById('rouletteCanvas');
   canvas.style.transform = `rotate(${totalRotation}deg)`;
   
-  // Show result after animation (increased from 4000ms to 6000ms)
+  // Show result after animation
   setTimeout(() => {
     spinning = false;
     document.getElementById('spinBtn').disabled = false;
-    canvas.style.transform = 'rotate(0deg)';
+    
+    // Keep the final rotation position for visual confirmation
+    // canvas.style.transform = `rotate(${baseRotation}deg)`;
     
     // Play win sound
     playWinSound();
@@ -432,6 +456,11 @@ function spinWheel() {
     // Show modal
     document.getElementById('resultText').textContent = selectedOption.text;
     document.getElementById('resultModal').classList.remove('hidden');
+    
+    // Reset rotation after a short delay so it's ready for next spin
+    setTimeout(() => {
+      canvas.style.transform = 'rotate(0deg)';
+    }, 500);
   }, 6000);
 }
 
