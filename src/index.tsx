@@ -162,7 +162,7 @@ app.get('/', (c) => {
                 <div class="bg-white bg-opacity-90 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
                     <!-- Add Option Form -->
                     <div class="mb-6">
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 mb-3">
                             <input 
                                 type="text" 
                                 id="newOption" 
@@ -177,6 +177,15 @@ app.get('/', (c) => {
                                 追加
                             </button>
                         </div>
+                        
+                        <!-- Share Button -->
+                        <button 
+                            onclick="copyShareURL()"
+                            class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg hover:shadow-lg transition font-semibold"
+                        >
+                            <i class="fas fa-share-alt mr-2"></i>
+                            このルーレットを共有
+                        </button>
                     </div>
 
                     <!-- Options List -->

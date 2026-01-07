@@ -13,6 +13,7 @@ let winSound;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  loadFromURL(); // Load from URL first
   loadOptions();
   loadVolume();
   initAudio();
@@ -24,6 +25,106 @@ document.addEventListener('DOMContentLoaded', () => {
 // Audio initialization
 function initAudio() {
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+// Load settings from URL parameters
+function loadFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Load options from URL
+  const optionsParam = urlParams.get('options');
+  if (optionsParam) {
+    try {
+      const decoded = atob(optionsParam);
+      const loadedOptions = JSON.parse(decoded);
+      if (Array.isArray(loadedOptions) && loadedOptions.length > 0) {
+        options = loadedOptions;
+        localStorage.setItem('rouletteOptions', JSON.stringify(options));
+      }
+    } catch (e) {
+      console.error('Failed to load options from URL:', e);
+    }
+  }
+  
+  // Load volume from URL
+  const volumeParam = urlParams.get('volume');
+  if (volumeParam) {
+    const vol = parseInt(volumeParam);
+    if (vol >= 0 && vol <= 100) {
+      volume = vol / 100;
+      localStorage.setItem('rouletteVolume', volume.toString());
+    }
+  }
+  
+  // Load sound setting from URL
+  const soundParam = urlParams.get('sound');
+  if (soundParam) {
+    soundEnabled = soundParam === '1';
+  }
+}
+
+// Generate share URL
+function generateShareURL() {
+  const baseURL = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams();
+  
+  // Encode options
+  const optionsJSON = JSON.stringify(options);
+  const optionsEncoded = btoa(optionsJSON);
+  params.set('options', optionsEncoded);
+  
+  // Add volume
+  params.set('volume', Math.round(volume * 100).toString());
+  
+  // Add sound setting
+  params.set('sound', soundEnabled ? '1' : '0');
+  
+  return baseURL + '?' + params.toString();
+}
+
+// Copy share URL to clipboard
+function copyShareURL() {
+  const shareURL = generateShareURL();
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(shareURL).then(() => {
+      alert('共有URLをクリップボードにコピーしました！\n\nこのURLを共有すると、他の人が同じルーレット設定を見ることができます。');
+    }).catch(err => {
+      // Fallback for older browsers
+      showShareURLDialog(shareURL);
+    });
+  } else {
+    // Fallback for older browsers
+    showShareURLDialog(shareURL);
+  }
+}
+
+// Show share URL in a dialog (fallback)
+function showShareURLDialog(url) {
+  const dialog = document.createElement('div');
+  dialog.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 1000; max-width: 80%;';
+  
+  const title = document.createElement('h3');
+  title.textContent = '共有URL';
+  title.style.marginBottom = '10px';
+  
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = url;
+  input.readOnly = true;
+  input.style.cssText = 'width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; font-size: 14px;';
+  
+  const button = document.createElement('button');
+  button.textContent = '閉じる';
+  button.style.cssText = 'background: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;';
+  button.onclick = () => document.body.removeChild(dialog);
+  
+  dialog.appendChild(title);
+  dialog.appendChild(input);
+  dialog.appendChild(button);
+  document.body.appendChild(dialog);
+  
+  input.select();
 }
 
 // Load volume from localStorage
@@ -521,3 +622,4 @@ function closeModal() {
 window.deleteOption = deleteOption;
 window.toggleOption = toggleOption;
 window.changeWeight = changeWeight;
+window.copyShareURL = copyShareURL;
