@@ -410,33 +410,37 @@ function spinWheel() {
   }
   
   // Calculate the angle for the selected option
-  // We need to calculate where the selected option's center is
-  let targetAngle = 0;
-  let angleAccumulator = 0;
+  // The wheel is drawn starting from -90deg (top, 12 o'clock position)
+  // We need to find where the center of the selected slice is located
+  let angleAccumulator = 0;  // Starts at 0 degrees in our coordinate system
+  let selectedSliceCenter = 0;
   
   for (const opt of enabledOptions) {
     const sliceAngle = (opt.weight / totalWeight) * 360;
     
     if (opt.id === selectedOption.id) {
-      // Target the middle of this slice
-      // The pointer is at the top (0 degrees), so we need to rotate 
-      // so that the middle of this slice ends up at the top
-      targetAngle = angleAccumulator + (sliceAngle / 2);
+      // Calculate the center of this slice
+      selectedSliceCenter = angleAccumulator + (sliceAngle / 2);
       break;
     }
     
     angleAccumulator += sliceAngle;
   }
   
-  // We need to rotate the wheel so the selected slice is at the top (pointer position)
-  // Since the wheel rotates clockwise and we want the slice to end up at the top,
-  // we need to calculate the rotation needed
-  // The wheel needs to rotate so that targetAngle ends up at 0 (top)
-  const baseRotation = 360 - targetAngle;
+  // The pointer is at the top (0 degrees in CSS rotation)
+  // The wheel drawing starts at -90 degrees (top in canvas coordinates)
+  // When we rotate the wheel clockwise by X degrees, the slice that was at position X 
+  // will move to position 0 (top/pointer)
+  // So we need to rotate by: (360 - selectedSliceCenter) to bring that slice to the top
+  // But since canvas starts at -90deg and CSS rotation is from 0deg, we need to adjust
+  
+  // To make the selected slice align with the pointer at top:
+  // We rotate the wheel so that selectedSliceCenter ends up at 0 (top position)
+  const finalRotation = -selectedSliceCenter;
   
   // Add multiple full rotations for effect
   const spins = 7 + Math.random() * 3;
-  const totalRotation = (360 * spins) + baseRotation;
+  const totalRotation = (360 * spins) + finalRotation;
   
   // Animate
   const canvas = document.getElementById('rouletteCanvas');
@@ -446,9 +450,6 @@ function spinWheel() {
   setTimeout(() => {
     spinning = false;
     document.getElementById('spinBtn').disabled = false;
-    
-    // Keep the final rotation position for visual confirmation
-    // canvas.style.transform = `rotate(${baseRotation}deg)`;
     
     // Play win sound
     playWinSound();

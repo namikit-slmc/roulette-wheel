@@ -180,7 +180,7 @@ app.get('/', (c) => {
                     </div>
 
                     <!-- Options List -->
-                    <div class="space-y-3 max-h-96 overflow-y-auto" id="optionsList">
+                    <div class="space-y-3 max-h-[600px] overflow-y-auto" id="optionsList">
                         <!-- Options will be dynamically added here -->
                     </div>
                     
