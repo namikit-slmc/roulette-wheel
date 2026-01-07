@@ -23,7 +23,7 @@ app.get('/', (c) => {
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
           body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6DD5FA 0%, #2980B9 100%);
             min-height: 100vh;
           }
           
@@ -73,7 +73,7 @@ app.get('/', (c) => {
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            color: #667eea;
+            color: #2980B9;
           }
           
           .option-item {
@@ -122,7 +122,6 @@ app.get('/', (c) => {
                         <i class="fas fa-dharmachakra mr-3"></i>
                         Webルーレット
                     </h1>
-                    <p class="text-white text-opacity-90">選択肢を追加してルーレットを回そう！</p>
                 </div>
                 
                 <!-- Sound Controls -->
@@ -152,7 +151,7 @@ app.get('/', (c) => {
                     </div>
                     
                     <div class="mt-8 text-center">
-                        <button id="spinBtn" class="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-12 py-4 rounded-full text-xl font-bold hover:shadow-2xl transform hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button id="spinBtn" class="bg-gradient-to-r from-blue-400 to-blue-600 text-white px-12 py-4 rounded-full text-xl font-bold hover:shadow-2xl transform hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed">
                             <i class="fas fa-play-circle mr-2"></i>
                             ルーレットを回す
                         </button>
@@ -196,9 +195,8 @@ app.get('/', (c) => {
             <div id="resultModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
                 <div class="result-modal bg-white rounded-3xl p-12 max-w-lg w-full text-center shadow-2xl">
                     <div class="text-6xl mb-6">🎉</div>
-                    <h3 class="text-3xl font-bold mb-4 text-gray-800">当選結果</h3>
-                    <div id="resultText" class="text-5xl font-bold text-purple-600 mb-8 pulse"></div>
-                    <button id="closeModal" class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-8 py-3 rounded-full text-lg font-semibold hover:shadow-xl transition">
+                    <div id="resultText" class="text-5xl font-bold text-blue-600 mb-8 pulse"></div>
+                    <button id="closeModal" class="bg-gradient-to-r from-blue-400 to-blue-600 text-white px-8 py-3 rounded-full text-lg font-semibold hover:shadow-xl transition">
                         閉じる
                     </button>
                 </div>
