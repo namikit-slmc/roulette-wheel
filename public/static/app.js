@@ -409,49 +409,41 @@ function spinWheel() {
     selectedOption = enabledOptions[enabledOptions.length - 1];
   }
   
-  // Now calculate the angle where this selected option is located on the wheel
-  // The wheel is drawn starting from -90deg (top), going counter-clockwise in canvas
-  // But canvas angles go counter-clockwise, while CSS rotation goes clockwise
+  // Calculate the angle where the selected option's center is located
+  // The wheel is drawn from -90deg (top) counter-clockwise
+  // We need to find where the center of the selected slice is
   
-  // Calculate which "slice" position the selected option is at
-  let selectedIndex = -1;
-  for (let i = 0; i < enabledOptions.length; i++) {
-    if (enabledOptions[i].id === selectedOption.id) {
-      selectedIndex = i;
+  let accumulatedAngle = 0; // in degrees, starting from 0
+  let selectedSliceCenter = 0;
+  
+  for (const opt of enabledOptions) {
+    const sliceAngleDeg = (opt.weight / totalWeight) * 360;
+    
+    if (opt.id === selectedOption.id) {
+      // Found the selected option, calculate its center
+      selectedSliceCenter = accumulatedAngle + (sliceAngleDeg / 2);
       break;
     }
+    
+    accumulatedAngle += sliceAngleDeg;
   }
   
-  // Calculate the starting angle and center angle of the selected slice IN RADIANS
-  let angleInRadians = -Math.PI / 2; // Starting point (top)
+  // The wheel starts drawing at -90 degrees (top)
+  // In our calculation above, we measured angles from 0 (which is at the top in our drawing)
+  // The pointer is at the top (visually at -90deg in canvas, or 270deg in standard coords)
   
-  // Skip to the selected slice
-  for (let i = 0; i < selectedIndex; i++) {
-    const sliceAngle = (enabledOptions[i].weight / totalWeight) * 2 * Math.PI;
-    angleInRadians += sliceAngle;
-  }
+  // When we apply CSS rotate(X deg), the wheel rotates clockwise by X degrees
+  // We want the selected slice center to end up at the top (pointer position)
   
-  // Add half of the selected slice's angle to get to its center
-  const selectedSliceAngle = (selectedOption.weight / totalWeight) * 2 * Math.PI;
-  angleInRadians += selectedSliceAngle / 2;
+  // The selected slice center is at selectedSliceCenter degrees from the starting point
+  // The starting point is at the top (-90deg in canvas = 0deg in our measurement)
+  // To bring selectedSliceCenter to the top, we need to rotate by -selectedSliceCenter
   
-  // Convert to degrees
-  // Canvas: -90deg (top) going counter-clockwise
-  // CSS: 0deg (right) going clockwise
-  // The relationship: CSS rotation = -(Canvas angle + 90deg)
-  let angleInDegrees = (angleInRadians * 180 / Math.PI);
-  
-  // The pointer is at the top (0deg in our visual, which is -90deg in canvas, 270deg in CSS)
-  // When we rotate the canvas clockwise by X degrees, the slice at canvas angle Y 
-  // will be at position Y - X
-  // We want: Y - X = -90 (top position)
-  // So: X = Y + 90
-  
-  const targetRotation = angleInDegrees + 90;
+  const targetRotation = -selectedSliceCenter;
   
   // Add multiple full rotations for effect
   const spins = 7 + Math.random() * 3;
-  const totalRotation = (360 * spins) - targetRotation; // Negative because we want clockwise to bring it to top
+  const totalRotation = (360 * spins) + targetRotation;
   
   // Animate
   const canvas = document.getElementById('rouletteCanvas');
