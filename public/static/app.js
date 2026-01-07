@@ -365,6 +365,59 @@ function drawWheel() {
   });
 }
 
+// Function to determine which slice is at the pointer after rotation
+function getSliceAtPointer(rotationDegrees, enabledOptions, totalWeight) {
+  // The pointer is at the top (-90 degrees in canvas coordinates)
+  // After rotating the wheel by rotationDegrees (clockwise), 
+  // we need to find which slice is now at the pointer position
+  
+  // Normalize rotation to 0-360 range
+  const normalizedRotation = ((rotationDegrees % 360) + 360) % 360;
+  
+  // The pointer position in canvas is -90 degrees (or 270 degrees in standard coords)
+  // After clockwise rotation by normalizedRotation degrees,
+  // the slice that was at position (270 - normalizedRotation) is now at the pointer
+  
+  // But we need to think in terms of the canvas drawing:
+  // Canvas draws from -90deg counter-clockwise
+  // CSS rotates clockwise
+  
+  // When we rotate clockwise by X degrees, a point at angle A moves to angle (A + X)
+  // The pointer is at -90deg. We want to find what was at angle (-90 - rotation) before rotation
+  
+  // Convert to the same coordinate system as canvas (starting from -90)
+  // In canvas: -90 is top, going counter-clockwise (angles increase)
+  // After CSS rotation by R degrees clockwise, 
+  // the slice that was at angle (-90 - R) is now at -90 (pointer)
+  
+  let targetAngle = -90 - normalizedRotation; // in degrees
+  
+  // Normalize to 0-360
+  while (targetAngle < 0) targetAngle += 360;
+  targetAngle = targetAngle % 360;
+  
+  // Now find which slice occupies this angle
+  // Canvas drawing starts at -90deg (= 270deg in standard)
+  // and goes counter-clockwise (angles increase in canvas terms)
+  
+  // Convert our target angle to the canvas coordinate system
+  // Canvas: -90deg = 270deg standard = 0 in our slice calculation
+  let angleFromStart = (targetAngle - 270 + 360) % 360;
+  
+  // Find the slice
+  let currentAngleSum = 0;
+  for (const opt of enabledOptions) {
+    const sliceAngleDeg = (opt.weight / totalWeight) * 360;
+    if (angleFromStart >= currentAngleSum && angleFromStart < currentAngleSum + sliceAngleDeg) {
+      return opt;
+    }
+    currentAngleSum += sliceAngleDeg;
+  }
+  
+  // Fallback to last option
+  return enabledOptions[enabledOptions.length - 1];
+}
+
 // Spin the wheel
 function spinWheel() {
   if (spinning) return;
@@ -409,37 +462,24 @@ function spinWheel() {
     selectedOption = enabledOptions[enabledOptions.length - 1];
   }
   
-  // Calculate the angle where the selected option's center is located
-  // The wheel is drawn from -90deg (top) counter-clockwise
-  // We need to find where the center of the selected slice is
-  
-  let accumulatedAngle = 0; // in degrees, starting from 0
-  let selectedSliceCenter = 0;
-  
+  // Now calculate rotation needed to bring this option to the pointer
+  // Find where this option is in the wheel (its center angle)
+  let angleFromStart = 0;
   for (const opt of enabledOptions) {
     const sliceAngleDeg = (opt.weight / totalWeight) * 360;
-    
     if (opt.id === selectedOption.id) {
-      // Found the selected option, calculate its center
-      selectedSliceCenter = accumulatedAngle + (sliceAngleDeg / 2);
+      angleFromStart += sliceAngleDeg / 2; // Center of the slice
       break;
     }
-    
-    accumulatedAngle += sliceAngleDeg;
+    angleFromStart += sliceAngleDeg;
   }
   
-  // The wheel starts drawing at -90 degrees (top)
-  // In our calculation above, we measured angles from 0 (which is at the top in our drawing)
-  // The pointer is at the top (visually at -90deg in canvas, or 270deg in standard coords)
+  // The wheel starts at -90deg (top), going counter-clockwise
+  // This slice center is at angleFromStart degrees from the start
+  // In canvas terms: -90 + angleFromStart degrees
+  // To bring it to the pointer at -90, we need to rotate by -angleFromStart
   
-  // When we apply CSS rotate(X deg), the wheel rotates clockwise by X degrees
-  // We want the selected slice center to end up at the top (pointer position)
-  
-  // The selected slice center is at selectedSliceCenter degrees from the starting point
-  // The starting point is at the top (-90deg in canvas = 0deg in our measurement)
-  // To bring selectedSliceCenter to the top, we need to rotate by -selectedSliceCenter
-  
-  const targetRotation = -selectedSliceCenter;
+  const targetRotation = -angleFromStart;
   
   // Add multiple full rotations for effect
   const spins = 7 + Math.random() * 3;
@@ -454,11 +494,15 @@ function spinWheel() {
     spinning = false;
     document.getElementById('spinBtn').disabled = false;
     
+    // Verify which option is actually at the pointer (for debugging)
+    const finalRotation = totalRotation % 360;
+    const actualSelected = getSliceAtPointer(finalRotation, enabledOptions, totalWeight);
+    
     // Play win sound
     playWinSound();
     
-    // Show modal
-    document.getElementById('resultText').textContent = selectedOption.text;
+    // Show modal with the actually selected option
+    document.getElementById('resultText').textContent = actualSelected.text;
     document.getElementById('resultModal').classList.remove('hidden');
     
     // Reset rotation after a short delay
