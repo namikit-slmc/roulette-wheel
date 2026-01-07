@@ -39,9 +39,9 @@
 
 ## 🌐 URLs
 
+- **本番環境**: https://roulette-wheel-cgi.pages.dev
+- **GitHub**: https://github.com/namikit-slmc/roulette-wheel
 - **開発環境**: https://3000-i2dzw5excr2erbkr24fta-d0b9e1e2.sandbox.novita.ai
-- **GitHub**: (未設定)
-- **本番環境**: (未デプロイ)
 
 ## 📊 データアーキテクチャ
 
