@@ -4,6 +4,7 @@
 let options = [];
 let spinning = false;
 let soundEnabled = true;
+let volume = 0.5; // Default volume (0.0 to 1.0)
 
 // Audio Context for sound effects
 let audioContext;
@@ -13,6 +14,7 @@ let winSound;
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   loadOptions();
+  loadVolume();
   initAudio();
   renderOptions();
   drawWheel();
@@ -24,9 +26,24 @@ function initAudio() {
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
 }
 
+// Load volume from localStorage
+function loadVolume() {
+  const stored = localStorage.getItem('rouletteVolume');
+  if (stored) {
+    volume = parseFloat(stored);
+    document.getElementById('volumeSlider').value = volume * 100;
+    document.getElementById('volumeValue').textContent = Math.round(volume * 100) + '%';
+  }
+}
+
+// Save volume to localStorage
+function saveVolume() {
+  localStorage.setItem('rouletteVolume', volume.toString());
+}
+
 // Generate spin sound
 function playSpinSound() {
-  if (!soundEnabled || !audioContext) return;
+  if (!soundEnabled || !audioContext || volume === 0) return;
   
   const oscillator = audioContext.createOscillator();
   const gainNode = audioContext.createGain();
@@ -37,8 +54,8 @@ function playSpinSound() {
   oscillator.frequency.value = 200;
   oscillator.type = 'sine';
   
-  gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+  gainNode.gain.setValueAtTime(0.3 * volume, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.01 * volume, audioContext.currentTime + 0.1);
   
   oscillator.start(audioContext.currentTime);
   oscillator.stop(audioContext.currentTime + 0.1);
@@ -46,7 +63,7 @@ function playSpinSound() {
 
 // Generate win sound
 function playWinSound() {
-  if (!soundEnabled || !audioContext) return;
+  if (!soundEnabled || !audioContext || volume === 0) return;
   
   const oscillator = audioContext.createOscillator();
   const gainNode = audioContext.createGain();
@@ -70,8 +87,8 @@ function playWinSound() {
     osc.frequency.value = freq;
     osc.type = 'sine';
     
-    gain.gain.setValueAtTime(0.2, time + i * 0.15);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + i * 0.15 + 0.3);
+    gain.gain.setValueAtTime(0.2 * volume, time + i * 0.15);
+    gain.gain.exponentialRampToValueAtTime(0.01 * volume, time + i * 0.15 + 0.3);
     
     osc.start(time + i * 0.15);
     osc.stop(time + i * 0.15 + 0.3);
@@ -87,11 +104,19 @@ function setupEventListeners() {
   document.getElementById('spinBtn').addEventListener('click', spinWheel);
   document.getElementById('closeModal').addEventListener('click', closeModal);
   document.getElementById('soundToggle').addEventListener('click', toggleSound);
+  document.getElementById('volumeSlider').addEventListener('input', updateVolume);
   
   // Click outside modal to close
   document.getElementById('resultModal').addEventListener('click', (e) => {
     if (e.target.id === 'resultModal') closeModal();
   });
+}
+
+// Update volume
+function updateVolume(e) {
+  volume = e.target.value / 100;
+  document.getElementById('volumeValue').textContent = e.target.value + '%';
+  saveVolume();
 }
 
 // Toggle sound
@@ -225,18 +250,18 @@ function renderOptions() {
             x1
           </button>
           <button 
-            onclick="changeWeight(${opt.id}, 2)"
-            class="px-3 py-1 rounded ${opt.weight === 2 ? 'bg-orange-500' : 'bg-orange-300'} text-white text-sm hover:bg-orange-600 transition"
-            title="2倍の確率"
-          >
-            x2
-          </button>
-          <button 
             onclick="changeWeight(${opt.id}, 3)"
-            class="px-3 py-1 rounded ${opt.weight === 3 ? 'bg-red-500' : 'bg-red-300'} text-white text-sm hover:bg-red-600 transition"
+            class="px-3 py-1 rounded ${opt.weight === 3 ? 'bg-orange-500' : 'bg-orange-300'} text-white text-sm hover:bg-orange-600 transition"
             title="3倍の確率"
           >
             x3
+          </button>
+          <button 
+            onclick="changeWeight(${opt.id}, 5)"
+            class="px-3 py-1 rounded ${opt.weight === 5 ? 'bg-red-500' : 'bg-red-300'} text-white text-sm hover:bg-red-600 transition"
+            title="5倍の確率"
+          >
+            x5
           </button>
         </div>
         
@@ -387,15 +412,15 @@ function spinWheel() {
   const sliceAngle = 360 / enabledOptions.length;
   const targetAngle = (selectedIndex * sliceAngle) + (sliceAngle / 2);
   
-  // Add multiple rotations for effect
-  const spins = 5 + Math.random() * 3;
+  // Add multiple rotations for effect (more spins for longer animation)
+  const spins = 7 + Math.random() * 3; // Increased from 5
   const totalRotation = (360 * spins) + targetAngle;
   
   // Animate
   const canvas = document.getElementById('rouletteCanvas');
   canvas.style.transform = `rotate(${totalRotation}deg)`;
   
-  // Show result after animation
+  // Show result after animation (increased from 4000ms to 6000ms)
   setTimeout(() => {
     spinning = false;
     document.getElementById('spinBtn').disabled = false;
@@ -407,7 +432,7 @@ function spinWheel() {
     // Show modal
     document.getElementById('resultText').textContent = selectedOption.text;
     document.getElementById('resultModal').classList.remove('hidden');
-  }, 4000);
+  }, 6000);
 }
 
 // Close modal

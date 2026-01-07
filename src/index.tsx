@@ -18,7 +18,7 @@ app.get('/', (c) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>ルーレットホイール - Roulette Wheel</title>
+        <title>Webルーレット - Web Roulette</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <style>
@@ -39,7 +39,7 @@ app.get('/', (c) => {
             height: 100%;
             border-radius: 50%;
             position: relative;
-            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+            transition: transform 6s cubic-bezier(0.17, 0.67, 0.12, 0.99);
             box-shadow: 0 10px 50px rgba(0,0,0,0.3);
             border: 8px solid #fff;
           }
@@ -120,17 +120,23 @@ app.get('/', (c) => {
                 <div class="text-center mb-4">
                     <h1 class="text-5xl font-bold text-white mb-2">
                         <i class="fas fa-dharmachakra mr-3"></i>
-                        ルーレットホイール
+                        Webルーレット
                     </h1>
                     <p class="text-white text-opacity-90">選択肢を追加してルーレットを回そう！</p>
                 </div>
                 
-                <!-- Sound Toggle -->
-                <div class="flex justify-center mb-4">
+                <!-- Sound Controls -->
+                <div class="flex justify-center items-center gap-4 mb-4">
                     <button id="soundToggle" class="bg-white bg-opacity-20 text-white px-6 py-2 rounded-lg hover:bg-opacity-30 transition">
                         <i class="fas fa-volume-up mr-2"></i>
                         <span id="soundStatus">サウンド: ON</span>
                     </button>
+                    <div class="flex items-center gap-3 bg-white bg-opacity-20 px-4 py-2 rounded-lg">
+                        <i class="fas fa-volume-down text-white"></i>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="50" class="w-32">
+                        <i class="fas fa-volume-up text-white"></i>
+                        <span id="volumeValue" class="text-white font-semibold w-12">50%</span>
+                    </div>
                 </div>
             </div>
 
@@ -155,11 +161,6 @@ app.get('/', (c) => {
 
                 <!-- Right Panel: Options Management -->
                 <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
-                    <h2 class="text-3xl font-bold text-white mb-6">
-                        <i class="fas fa-list-ul mr-2"></i>
-                        選択肢の管理
-                    </h2>
-                    
                     <!-- Add Option Form -->
                     <div class="mb-6">
                         <div class="flex gap-2">
